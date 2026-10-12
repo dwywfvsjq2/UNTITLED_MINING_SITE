@@ -1,1 +1,1 @@
-# dwywfvsjq2.github.io
+# UNTITLED_MINING_SITE.github.io
