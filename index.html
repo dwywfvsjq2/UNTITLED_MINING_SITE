@@ -1594,7 +1594,7 @@ function rollRune(type){
   if(curse) boosts.push({key:curse.key, rarity:'curse', value:curse.min});
   // skills take no slot: each one appears independently with the chance of its rarity (Common = always), and is listed last
   skillDefs.forEach(sk=>{ const rr = RUNESTONE.rarities.find(x=>x.id===sk.rarity); const p = (rr && rr.chance!=null) ? rr.chance : 1; if(Math.random() < p) boosts.push({key:sk.key, rarity:sk.rarity, value:0}); });
-  if(Math.random() < 0.0001) boosts.push({key:'skill:unknown_ability', rarity:'glorious', value:0}); // hidden: not listed in any pool
+  if(state._forceUnknown || Math.random() < 0.0001) boosts.push({key:'skill:unknown_ability', rarity:'glorious', value:0}); // hidden: not listed in any pool
   return boosts;
 }
 function hasEnrichment(){ return state.ownedUpgrades.includes('subupg_enrichment'); }
@@ -1613,7 +1613,8 @@ function buyRune(typeId){
   const want = fl.keys||[];
   const hit = new Set(boosts.map(b=>b.key).filter(k=>want.includes(k))).size;
   const okKeys = fl.mode==='all' ? hit >= Math.min(want.length, type.boosts - (type.curse?1:0)) : hit > 0;
-  if(!high && want.length && !okKeys){
+  const keepUnknown = boosts.some(b=>b.key==='skill:unknown_ability'); // never auto-delete a rune that rolled Unknown Ability
+  if(!high && !keepUnknown && want.length && !okKeys){
     const refund = runeRefund(typeId);
     gainMana(refund, 'raw');
     checkAchievements();
@@ -1627,6 +1628,8 @@ function buyRune(typeId){
   scheduleSave();
   return rune;
 }
+function debugForceUnknownRune(typeId){ // test helper: buy a rune that is guaranteed to roll Unknown Ability (goes through the normal filter path)
+  state._forceUnknown = true; let r = null; try{ r = buyRune(typeId||'basic'); } finally { state._forceUnknown = false; } return r; }
 function runeSlots(){ return 2 + (state.ownedUpgrades.includes('subupg_shattered_boundary') ? 1 : 0); }
 function isRuneEquipped(id){ return state.equippedRunes.includes(id); }
 function equipRune(id){
@@ -3581,7 +3584,7 @@ function currentCaveSizeMultiplier(){
 
 
 window.Infinimine = {
-  get state(){ return state; }, bootlegLayer, subOwnedUpgrades, gauntletOwned, runeSlots, dashSpeedMult, tickRateMult, TEST_SHRINE, eventMiningSpeedMult, chrononiteWindowOpen, activateChrononiteShrine,
+  get state(){ return state; }, bootlegLayer, debugForceUnknownRune, subOwnedUpgrades, gauntletOwned, runeSlots, dashSpeedMult, tickRateMult, TEST_SHRINE, eventMiningSpeedMult, chrononiteWindowOpen, activateChrononiteShrine,
   LAYERS, SUB_LAYERS, SUB_MINERALS, SUB_UPGRADES, RARITIES, MINERALS, FILLERS, PICKAXES, EQUIPMENT, UPGRADES, CAVES, ACHIEVEMENTS,
   RARITY_BY_ID, SUPERNATURAL_IDX, MYTHIC_PLUS_IDX, SCARCE_IDX,
   MINERALS_BY_LAYER, FILLER_BY_LAYER, MINERAL_BY_ID,
